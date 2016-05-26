@@ -1,0 +1,119 @@
+---
+title: "quest Package"
+author: "Kai T. Horstmann"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r load package, eval = TRUE, echo = FALSE}
+library(quest)
+```
+
+
+The following documentation will present an example on how to use the pacakge `quest`. The quest pacakge was designed to take do the work that is dne whenver an already published questionnaire is used on a sample. 
+
+The quest package should minimize the work that is always done when analyzing questionnaire data. It relies heavily on the packages `psych`and `lavaan` to do some further analysis.
+
+The package begins its work where the collection of raw data has endet: Usually, a data set is obtained, that contains the raw answers of participants (for example on a 1 to 7 type scale) as and a table is presented that shows which item belongs to which scale and whether it needs to be recoded or not. This is where the work of the `quest`package begins.
+
+## Example - The Big Five Short Inventory (BFI-K)
+
+To exemplify the use of the package, consider the following example using data from the Big Five Inventory. First of all, we need to install and load the package `quest`.
+
+```{r fake load quest, eval = FALSE, echo = TRUE}
+## Install from github not yet available
+library(quest)
+
+```
+
+```{r real load quest, eval = TRUE, echo = FALSE}
+library(quest)
+
+```
+
+The package contains a data frame `bigfive` , which contains $N = `r nrow(bigfive)`$ subjects that have completed the Big Five questionnaire, a questionnaire on the dark triad, as well as newly designed items on narcisism. 
+
+### Keytable and shortkeys
+
+The followoing table from the Big Five Inventar (21 Items) shows how each item in the questionnaire has to be coded and to which scale it belongs:
+
+|Scale|Extraversion|Agreeableness|Conscientiousness|Neuroticism|Openness|
+|:-|----:|---:|---:|---:|----:|
+|  | 1R  |2R  | 3  | 4  | 5   |
+|  | 6   |7   | 8R | 9R | 10  |
+|  | 11R |12R | 13 | 14 |15   |
+|  | 16  |17R | 18 | 19 | 20  |
+|  |     |    |    |    | 21  |
+
+You can hand this structure over to the `quest` package using the following code (known as a `shortkey`):
+
+```{r scale example, eval = TRUE, echo = TRUE}
+
+scales <-  c("E = 1r, 6, 11R, 16",
+             "A = 2r, 7, 12r, 17r",
+             "C = 3, 8r, 13, 18",
+             "N = 4, 9r, 14, 19",
+             "O = 5, 10, 15, 20 21")
+
+```
+
+For some questionnaires (see `?shortKeys`), the shortkeys are already in the package and can be requested using the `shortKeys` function:
+
+```{r}
+shortKeys("BFI-K")
+```
+
+The shortkey contains the following information:
+
+1. How many items does the questionnaire have?
+2. Which item belongs to which scale?
+3. Which item needs to be recoded?
+
+## Preparation of data
+
+The second ingredient to the usage of the `quest` package is the data. In the package, a data frame is already provided to exemplify its use. Type `bigfive` to get the data frame:
+
+```{r show data, eval = TRUE}
+
+data <- bigfive
+
+```
+
+The first 21 items are relevant for the BFI. All items are in the original order (as they should be). You need to extract the exact items into a separate data frame for the usage of the `quest` package (another option is providing the codebook from your study, see section on using a codebook).
+
+
+```{r extract items, eval = TRUE, echo = TRUE}
+
+bfik.items <- grep(pattern = "BFI_", x = names(data), value = TRUE)
+bfik.data <- data[bfik.items]
+
+```
+
+
+### Recoding & computation of scales
+
+After having selected the data frame that contains only the items from the questionnaire in the **correct order**, you can use this data frame together with the shortkeys to proceed in your analysis. 
+
+
+
+```{r}
+scale2list(scales[1])
+```
+
+To extract the five scales from the questionnaires, make first a list of all the keys (nested list).
+
+```{r}
+
+library(purrr)
+itemkeys <- purrr::map(scales, scale2list)
+itemkeys[1]
+
+```
+
+
+You can also use the function `NOT_YET_WRITTEN` to take your codebook (which you should have) and let this object be generated.
+
