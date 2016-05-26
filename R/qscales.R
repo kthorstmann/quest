@@ -25,20 +25,6 @@
 
 # helper: make one scale to a list -----------------------------------
 
-# this function takes a data set and the scales as defined by the user and transfors them into a list with all scales, already recoded if neccessary
-
-# bigfive21 <- data
-# head(data)
-#
-# scales = c("E = 1r, 6, 11R, 16",
-#            "A = 2r, 7, 12r, 17r",
-#            "C = 3, 8r, 13, 18",
-#            "N = , 9r, 14, 19",
-#            "O = 4, 10RR, 15, 20 21")
-
-
-# this function turns one scale into readable format for R, i. e. by giving a list output with the name of the scale, the items and the items to recode
-# helper function
 
 #' Transform a scale into a readable list
 #'
@@ -51,7 +37,6 @@
 #'
 #'Items that need to be recoded are indicated using an \code{R} or \code{r} behind the number of the item.
 #'
-#'
 #' @param scale A description of a scale in the form of \code{scale <- c(name = 1, 2, 3, 4r, 5)}. The scale is defined using \code{=}, the items by their position in the data frame or questionnaire (this should correspond!).
 #'
 #' @return
@@ -60,10 +45,10 @@
 #'
 #' @examples
 #' scales = c("E = 1r, 6, 11R, 16",
-#            "A = 2r, 7, 12r, 17r",
-#            "C = 3, 8r, 13, 18",
-#            "N = , 9r, 14, 19",
-#            "O = 4, 10RR, 15, 20 21")
+#'            "A = 2r, 7, 12r, 17r",
+#'            "C = 3, 8r, 13, 18",
+#'            "N = , 9r, 14, 19",
+#'            "O = 4, 10RR, 15, 20 21")
 #' scale2list(scales[1])
 
 scale2list <- function(scale){
@@ -116,10 +101,11 @@ scale2list <- function(scale){
 }
 
 
-
 # helper: make a scale (list) to a recoded data set ------------------
 
-# takes a scale and recodes the items and makes a data set
+# takes a scale and recodes the items and makes a new data set,
+# with the recoded items
+
 scales <-  c("E = 1r, 6, 11R, 16",
              "A = 2r, 7, 12r, 17r",
              "C = 3, 8r, 13, 18",
@@ -171,12 +157,10 @@ if(!setequal(seq_along(unlist(all.items)), sort(unlist(all.items)))) {
 
 }
 
-# recode the items that need to be recoded
-
-## see function, which needs to be build.
+## add recode function, is currently developed, see below.
 
 
-# items
+## reutrn only the new data frame
 
 data[unlist(scale.items)]
 # data frame
@@ -189,28 +173,51 @@ data[unlist(scale.items)]
 # recode items -------------------------------------------------------
 
 # input is a vector of item positions or names of items to recode
-# recode.names <- bfik.items[unlist(all.recodes)]
-# recode.position <- unlist(all.recodes)
-# data
-# head(data)
-# recode <- recode.position
+library(quest)
+
+# data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+
+
+# THESTTHAT value.check is between 100 and 0
+
+# example
+# data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
+data <- data[1:10, 1:10]
+
+
+recode <- c(1, 2)
+
+recodeQuick(data, recode, 1)
+
+## FEHLER: Funktion rekodiert hier die falschen Werte in den falschen Spalten
+
+## change this to the valid values that exist, and only run the check if there is a null.
+
+# give valid values as input?
+
+# or name all values that should be excluded from recoding?
+
+
 
 recodeQuick <- function(data, recode, value.check = 1){
-  stopifnot(is.data.frame(data))
+
+    stopifnot(is.data.frame(data))
   # drop NA
   recode <- recode[!is.na(recode)]
-  if (is.numeric(recode) || is.character(recode)) {
+  if (!(is.numeric(recode) || is.character(recode))) {
     stop("Input to `recode` must either be numeric or character (i. e. the
          position or  the name of the items `data`")
   }
-  # transform positions of items into names of items that will be recoded.
+
+  # check if positions are all part of the data frame
   if (is.numeric(recode)) {
     recode.names <- names(data)[recode]
     if (any(is.na(recode.names))) {
       stop("you have provided the position of items to be recoded that are
            not included in the data frame. Please check input.")
     }
-    }
+  }
+  recode.names <- recode
 
   # check if names are all part of the data frame
   if (is.character(recode.names)) {
@@ -222,14 +229,11 @@ recodeQuick <- function(data, recode, value.check = 1){
     }
   }
 
+  # make data frame that is checked for recode:
   data.recode <- data[recode.names]
 
-  ### check that error is thrown when -99 is in included in the data frame TESTTHAT
-
+  # check values in data frame, are all recodes present, some missings?
   table.values <- table(unlist(data.recode))
-  # die in prozent umrechnen und nur die Werte umkodieren, die mehr als 1% sind
-
-  # THESTTHAT value.check is between 100 and 0
 
   if (!is.null(value.check)) {
     value.check.p <- value.check/100
@@ -242,29 +246,35 @@ recodeQuick <- function(data, recode, value.check = 1){
               be missings. Please recode data, set `value.check = NULL`,
               or set a different limit for value.check.: \n ",
               list(exclude.values))
-      include.values <- as.numeric(names(perc.values)[!perc.values <= value.check.p])
     }
-  } else {
+    include.values <- as.numeric(names(perc.values)[!perc.values <= value.check.p])
+    } else {
     include.values <- as.numeric(names(unlist(table.values)))
   }
-  # final values that need to be recoded, but need to exclude the -99 from the recoding, so no chance just to set them to a loop or so
-  # maybe stop function here?
 
-  # also: provide artificial range of items, that makes this check unneccesary
+  recode.hits.data <- purrr::map(include.values, ~ data == .[1])
+  for (i in seq_along(include.values)) {
+    data[recode.hits.data[[i]]] <- rev(include.values)[i]
+  }
 
-  # put into different function?
+  # if (FALSE) { ## this works, maybe faster, but is maybe dangerous?
+  #   rec <- function(x, y) {
+  #     data[x] <<- y ## careful, double arrow
+  #     data
+  #   }
+  #   purrr::map2(.x = recode.hits.data, .y = rev(include.values), ~ rec(.x, .y))
+  # }
 
-  range(include.values)
+  message(include.values)
+  data
 
   }
 
 
 
-# should be three different functions --------------------------------
 
-## 1. recode
-## 2. make items
-## 3. make measurement models
+# function: make measurement models ----------------------------------
+
 
 
 
