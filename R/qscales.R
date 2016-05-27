@@ -173,21 +173,19 @@ data[unlist(scale.items)]
 # recode items -------------------------------------------------------
 
 # input is a vector of item positions or names of items to recode
-library(quest)
-
-# data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
-
-
+# library(quest)
 # THESTTHAT value.check is between 100 and 0
 
-# example
 # data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
-data <- data[1:10, 1:10]
+# data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+# data <- data[1:10, 1:10]
+# recode <- c(6, 10)
 
 
-recode <- c(1, 2)
+# recodeQuick(data, recode, NULL)
 
-recodeQuick(data, recode, 1)
+
+
 
 ## FEHLER: Funktion rekodiert hier die falschen Werte in den falschen Spalten
 
@@ -197,13 +195,17 @@ recodeQuick(data, recode, 1)
 
 # or name all values that should be excluded from recoding?
 
+# valid.values = NULL
+# data[2, 3] <- -99
+# recodeQuick(data, recode = c(1, 2), 1:4)
 
+recodeQuick <- function(data, recode, valid.values = NULL){
 
-recodeQuick <- function(data, recode, value.check = 1){
+  stopifnot(is.data.frame(data))
 
-    stopifnot(is.data.frame(data))
   # drop NA
   recode <- recode[!is.na(recode)]
+
   if (!(is.numeric(recode) || is.character(recode))) {
     stop("Input to `recode` must either be numeric or character (i. e. the
          position or  the name of the items `data`")
@@ -217,10 +219,10 @@ recodeQuick <- function(data, recode, value.check = 1){
            not included in the data frame. Please check input.")
     }
   }
-  recode.names <- recode
 
   # check if names are all part of the data frame
-  if (is.character(recode.names)) {
+  if (is.character(recode)) {
+    recode.names <- recode
     if (any(!recode.names %in% names(data))) {
       comprsn <- recode.names %in% names(data)
       stop("Your have provided names of items to be recoded that \n do not
@@ -232,27 +234,18 @@ recodeQuick <- function(data, recode, value.check = 1){
   # make data frame that is checked for recode:
   data.recode <- data[recode.names]
 
-  # check values in data frame, are all recodes present, some missings?
-  table.values <- table(unlist(data.recode))
 
-  if (!is.null(value.check)) {
-    value.check.p <- value.check/100
-    perc.values <- table.values / sum(table.values)
-    exclude.values <- as.numeric(names(perc.values)[perc.values <= value.check.p])
-    if (length(exclude.values) >= 1) {
-      message("The following values were excluded from the recoding,
-              since they make less than ",  value.check, "% of the values
-              in the items that need to be recoded. They were assumed to
-              be missings. Please recode data, set `value.check = NULL`,
-              or set a different limit for value.check.: \n ",
-              list(exclude.values))
-    }
-    include.values <- as.numeric(names(perc.values)[!perc.values <= value.check.p])
-    } else {
-    include.values <- as.numeric(names(unlist(table.values)))
+  # check values in data frame, are all recodes present, some missings?
+
+  if (is.null(valid.values)) {
+    table.values <- table(unlist(data.recode))
+    include.values <- as.numeric(names(table.values))
+  } else {
+    include.values <- valid.values
   }
 
-  recode.hits.data <- purrr::map(include.values, ~ data == .[1])
+  recode.hits.data <- purrr::map(include.values, ~ data == .)
+
   for (i in seq_along(include.values)) {
     data[recode.hits.data[[i]]] <- rev(include.values)[i]
   }
@@ -265,7 +258,9 @@ recodeQuick <- function(data, recode, value.check = 1){
   #   purrr::map2(.x = recode.hits.data, .y = rev(include.values), ~ rec(.x, .y))
   # }
 
-  message(include.values)
+
+  message("The following values were recoded: \n ",
+          paste(paste(include.values,"to", rev(include.values), collapse = ", ")))
   data
 
   }
