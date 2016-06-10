@@ -25,6 +25,10 @@ Items that need to be recoded are indicated using an \code{R} or \code{r} behind
 }
 \examples{
 scales = c("E = 1r, 6, 11R, 16",
+           "A = 2r, 7, 12r, 17r",
+           "C = 3, 8r, 13, 18",
+           "N = , 9r, 14, 19",
+           "O = 4, 10RR, 15, 20 21")
 scale2list(scales[1])
 }
 
