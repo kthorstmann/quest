@@ -16,3 +16,6 @@ This is a package under construction for the processing of questionnaire data in
 
 
 An example of how to use it can be found in the example [`quest_example.Rmd`](https://github.com/kthorstmann/quest/blob/master/vignettes/quest_example.Rmd)
+
+
+** This package is under developement and should not be used for now **
