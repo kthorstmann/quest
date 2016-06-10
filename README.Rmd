@@ -13,3 +13,6 @@ This is a package under construction for the processing of questionnaire data in
 - computes factor scores (sums, means, factor scores from CFA)
 - returns measurement models
 - returns reliabilities for factors
+
+
+An example of how to use it can be found in the example [`quest_example.Rmd`](https://github.com/kthorstmann/quest/blob/master/vignettes/quest_example.Rmd)
