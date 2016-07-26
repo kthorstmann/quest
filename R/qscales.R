@@ -174,36 +174,41 @@ data[unlist(scale.items)]
 
 # input is a vector of item positions or names of items to recode
 # library(quest)
-# THESTTHAT value.check is between 100 and 0
 
-# data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
-# data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
-# data <- data[1:10, 1:10]
-# recode <- c(6, 10)
-
+# get as input not only the position but also the names, so either option.
 
 # recodeQuick(data, recode, NULL)
 
-
-
-
-## FEHLER: Funktion rekodiert hier die falschen Werte in den falschen Spalten
+## FEHLER: Funktion rekodiert hier die falschen Werte in den falschen Spalten, d. h. es werden derzeit alle rekodiert.
 
 ## change this to the valid values that exist, and only run the check if there is a null.
 
-# give valid values as input?
+data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
+recodeQuick(data, recode = "a", valid.values = c(1:4))
+## throws error becuase there is neither TRUE FALSE, but NA
 
-# or name all values that should be excluded from recoding?
+data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+data <- data[1:10, 1:10]
+data[1, 6] <- -99
+recode <- c(6, 10)
+recodeQuick(data, recode = c(6, 10), valid.values = c(1:4))
 
-# valid.values = NULL
-# data[2, 3] <- -99
-# recodeQuick(data, recode = c(1, 2), 1:4)
+
 
 recodeQuick <- function(data, recode, valid.values = NULL){
 
   stopifnot(is.data.frame(data))
 
-  # drop NA
+
+  # check that values are only integers:
+  data.check <- as.data.frame(purrr::map(data, as.integer))
+
+  if (any(data.check != data, na.rm = TRUE)) {
+    message("Some values are not integers. Please check your input if neccessary")
+  }
+  rm(data.check)
+
+  # drop NA from recode
   recode <- recode[!is.na(recode)]
 
   if (!(is.numeric(recode) || is.character(recode))) {
@@ -236,7 +241,6 @@ recodeQuick <- function(data, recode, valid.values = NULL){
 
 
   # check values in data frame, are all recodes present, some missings?
-
   if (is.null(valid.values)) {
     table.values <- table(unlist(data.recode))
     include.values <- as.numeric(names(table.values))
@@ -244,26 +248,19 @@ recodeQuick <- function(data, recode, valid.values = NULL){
     include.values <- valid.values
   }
 
-  recode.hits.data <- purrr::map(include.values, ~ data == .)
+  recode.hits.data <- purrr::map(include.values, ~ data.recode == . )
 
   for (i in seq_along(include.values)) {
-    data[recode.hits.data[[i]]] <- rev(include.values)[i]
+    data.recode[recode.hits.data[[i]]] <- rev(include.values)[i]
   }
 
-  # if (FALSE) { ## this works, maybe faster, but is maybe dangerous?
-  #   rec <- function(x, y) {
-  #     data[x] <<- y ## careful, double arrow
-  #     data
-  #   }
-  #   purrr::map2(.x = recode.hits.data, .y = rev(include.values), ~ rec(.x, .y))
-  # }
-
+  # merge two data frames again
+  data[recode.names] <- data.recode[recode.names]
 
   message("The following values were recoded: \n ",
           paste(paste(include.values,"to", rev(include.values), collapse = ", ")))
   data
-
-  }
+}
 
 
 

@@ -14,11 +14,11 @@ library(quest)
 ```
 
 
-The following documentation will present an example on how to use the pacakge `quest`. The quest pacakge was designed to take do the work that is dne whenver an already published questionnaire is used on a sample. 
+The following documentation will present an example on how to use the pacakge `quest`. The quest pacakge was designed to take do the work that is done whenver an already published questionnaire is used on a sample. 
 
-The quest package should minimize the work that is always done when analyzing questionnaire data. It relies heavily on the packages `psych`and `lavaan` to do some further analysis.
+The quest package should minimize the work that is always done when analyzing questionnaire data. It relies heavily on the packages `psych`and `lavaan` to do subsequent analysis.
 
-The package begins its work where the collection of raw data has endet: Usually, a data set is obtained, that contains the raw answers of participants (for example on a 1 to 7 type scale) as and a table is presented that shows which item belongs to which scale and whether it needs to be recoded or not. This is where the work of the `quest`package begins.
+The package begins its work where the collection of raw data has endet: Usually, a data set is obtained that contains the raw answers of participants (for example on a 1 to 7 type scale) and a table is presented that shows which item belongs to which scale and whether it needs to be recoded or not. This is where the work of the `quest`package begins.
 
 ## Example - The Big Five Short Inventory (BFI-K)
 
@@ -116,4 +116,8 @@ itemkeys[1]
 
 
 You can also use the function `NOT_YET_WRITTEN` to take your codebook (which you should have) and let this object be generated.
+
+
+
+
 
