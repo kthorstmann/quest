@@ -8,7 +8,6 @@
 # making scales with measurement models
 # data frame
 
-
 # this function extracts all scales from a codebook and turns them into a scale
 # the codebook is a data frame with several colums that indicate
 # - item
@@ -16,14 +15,8 @@
 # - scales
 # - items to recode
 
-# should return a list of items as the table form, an object "quest"
-# exCodebook <- function(){
-#
-# }
 
-
-
-# helper: make one scale to a list -----------------------------------
+# make scales into a readable list -----------------------------------
 
 
 #' Transform a scale into a readable list
@@ -100,8 +93,7 @@ scale2list <- function(scale){
   result
 }
 
-
-# helper: make a scale (list) to a recoded data set ------------------
+# take scales and make recoded data set ------------------------------
 
 # takes a scale and recodes the items and makes a new data set,
 # with the recoded items
@@ -112,9 +104,13 @@ scales <-  c("E = 1r, 6, 11R, 16",
              "N = 4, 9r, 14, 19",
              "O = 5, 10, 15, 20 21")
 
-# data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
 
-codeScales <- function(data, scales, recode = TRUE){
+codeScales <- function(data, scales, recode = TRUE, valid.values = NULL){
+
+
+  ### beg of section that is identical ____________________________________
+
   stopifnot(is.data.frame(data))
 
   if (!requireNamespace("purrr", quietly = FALSE)) {
@@ -123,65 +119,60 @@ codeScales <- function(data, scales, recode = TRUE){
     itemkeys <- lapply(scales, scale2list)
   }
 
-# extract information
-  # scale.name <- itemkeys[[1]]["name"]
-  # scale.items <- itemkeys[[1]]["items"]
-  # scale.recode <- itemkeys[[1]]["recode"]
-
-# check data frame TESTTHAT
-if (!requireNamespace("purrr", quietly = FALSE)) {
-  all.names <- purrr::map(itemkeys,  ~.x$name)
-  all.items <- purrr::map(itemkeys,  ~.x$items)
-  all.recodes <- purrr::map(itemkeys,  ~.x$recode)
-} else {
-  all.names <- lapply(itemkeys, function(x) x$name)
-  all.items <- lapply(itemkeys, function(x) x$items)
-  all.recodes <- lapply(itemkeys, function(x) x$recode)
+  # check data frame TESTTHAT
+  if (!requireNamespace("purrr", quietly = FALSE)) {
+    all.names <- purrr::map(itemkeys,  ~.x$name)
+    all.items <- purrr::map(itemkeys,  ~.x$items)
+    all.recodes <- purrr::map(itemkeys,  ~.x$recode)
+  } else {
+    all.names <- lapply(itemkeys, function(x) x$name)
+    all.items <- lapply(itemkeys, function(x) x$items)
+    all.recodes <- lapply(itemkeys, function(x) x$recode)
   }
 
-number.of.items <- length(unlist(all.items))
-if (number.of.items == 0) {stop ("Number of items indicated in scales is 0. Please check input") }
+  number.of.items <- length(unlist(all.items))
+  if (number.of.items == 0) {stop ("Number of items indicated in scales is 0. Please check input") }
 
-if (ncol(data) != number.of.items) {
-  stop("The data frame you inserted contains ", if(ncol(data) < number.of.items) {"less"} else {"more"}, " colmns (", ncol(data), ") than the number of items (", number.of.items, ") you indicated. Please correct either of them. Number of columns must be equal to number of items.")
+  if (ncol(data) != number.of.items) {
+    stop("The data frame you inserted contains ", if(ncol(data) < number.of.items) {"less"} else {"more"}, " colmns (", ncol(data), ") than the number of items (", number.of.items, ") you indicated. Please correct either of them. Number of columns must be equal to number of items.")
+  }
+
+  # make duplicate check in shortkeys
+  if (any(table(unlist(all.items)) > 1)) {
+    message("You have used the following item more than once: ",
+            names(table(unlist(all.items))[table(unlist(all.items)) > 1]),
+            ". Please check if correct.")
+  }
+  if(!setequal(seq_along(unlist(all.items)), sort(unlist(all.items)))) {
+    message("You have inserted ", max(unlist(all.items)), " items, but you have not used every item from 1 to ", max(unlist(all.items)), ". Please check if correct")
+  }
+  ### end of section that is identical ____________________________________
+
+  if (recode) {
+    all.recodes <- na.omit(unlist(all.recodes))
+    data <- recodeQuick(data, recode = all.recodes, valid.values = valid.values)
+  } else {
+    data <- data
+  }
+
+  ## computing the final scores
+
+  scored.scales <- purrr::map(all.items, ~ rowMeans(data[.x], na.rm = TRUE))
+  names(scored.scales) <- all.names
+  scored.scales <- as.data.frame(scored.scales)
+
+  ## make it optional to get measurement models?
+  return(data)
 }
 
-# make duplicate check in shortkeys
-if (any(table(unlist(all.items)) > 1)) {
-  message("You have used the following item more than once: ",
-          names(table(unlist(all.items))[table(unlist(all.items)) > 1]),
-          ". Please check if correct.")
-}
-if(!setequal(seq_along(unlist(all.items)), sort(unlist(all.items)))) {
-  message("You have inserted ", max(unlist(all.items)), " items, but you have not used every item from 1 to ", max(unlist(all.items)), ". Please check if correct")
-
-}
-
-## add recode function, is currently developed, see below.
-
-
-## reutrn only the new data frame
-
-data[unlist(scale.items)]
-# data frame
-
-
-}
 
 
 
-# recode items -------------------------------------------------------
+
+# recode items in data set -------------------------------------------
 
 # input is a vector of item positions or names of items to recode
-# library(quest)
-
 # get as input not only the position but also the names, so either option.
-
-# recodeQuick(data, recode, NULL)
-
-## FEHLER: Funktion rekodiert hier die falschen Werte in den falschen Spalten, d. h. es werden derzeit alle rekodiert.
-
-## change this to the valid values that exist, and only run the check if there is a null.
 
 data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
 recodeQuick(data, recode = "a", valid.values = c(1:4))
@@ -192,8 +183,6 @@ data <- data[1:10, 1:10]
 data[1, 6] <- -99
 recode <- c(6, 10)
 recodeQuick(data, recode = c(6, 10), valid.values = c(1:4))
-
-
 
 recodeQuick <- function(data, recode, valid.values = NULL){
 
@@ -263,11 +252,101 @@ recodeQuick <- function(data, recode, valid.values = NULL){
 }
 
 
+# function: make scores from data set --------------------------------
 
+## get measurement models
+
+# input: data and keys
+# output: measurement models as text
+
+scales <-  c("E = 1r, 6, 11R, 16",
+             "A = 2r, 7, 12r, 17r",
+             "C = 3, 8r, 13, 18",
+             "N = 4, 9r, 14, 19",
+             "O = 5, 10, 15, 20 21")
+data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+library(quest)
+
+
+mModels <- function(data, scales, run.models, ...){
+
+  ### this section identical to section in other functions ________________
+
+  stopifnot(is.data.frame(data))
+
+  if (!requireNamespace("purrr", quietly = FALSE)) {
+    itemkeys <- purrr::map(scales, scale2list)
+  } else {
+    itemkeys <- lapply(scales, scale2list)
+  }
+
+  # check data frame TESTTHAT
+  if (!requireNamespace("purrr", quietly = FALSE)) {
+    all.names <- purrr::map(itemkeys,  ~.x$name)
+    all.items <- purrr::map(itemkeys,  ~.x$items)
+  } else {
+    all.names <- lapply(itemkeys, function(x) x$name)
+    all.items <- lapply(itemkeys, function(x) x$items)
+  }
+
+  number.of.items <- length(unlist(all.items))
+  if (number.of.items == 0) {stop ("Number of items indicated in scales is 0. Please check input") }
+
+  if (ncol(data) != number.of.items) {
+    stop("The data frame you inserted contains ", if(ncol(data) < number.of.items) {"less"} else {"more"}, " colmns (", ncol(data), ") than the number of items (", number.of.items, ") you indicated. Please correct either of them. Number of columns must be equal to number of items.")
+  }
+
+  # make duplicate check in shortkeys
+  if (any(table(unlist(all.items)) > 1)) {
+    message("You have used the following item more than once: ",
+            names(table(unlist(all.items))[table(unlist(all.items)) > 1]),
+            ". Please check if correct.")
+  }
+  if(!setequal(seq_along(unlist(all.items)), sort(unlist(all.items)))) {
+    message("You have inserted ", max(unlist(all.items)), " items, but you have not used every item from 1 to ", max(unlist(all.items)), ". Please check if correct")
+  }
+
+  ### end of section that is identical ____________________________________
+
+
+## make measurement models:
+
+  item.names.text <- purrr::map(all.items, ~ names(data)[.])
+  manifests.string <- purrr::map(item.names.text, ~ stringr::str_c(., collapse = " + "))
+  ## get the models:
+  m.models <- purrr::map2(.x = all.names, .y = manifests.string, ~ stringr::str_c(.x, .y, sep = " =~ "))
+
+  if (run.models) {
+    model.fits <- purrr::map(m.models, ~ cfa(model = . , data = data, ...))
+    return(model.fits)
+  } else {
+    return(m.models)
+  }
+
+}
 
 # function: make measurement models ----------------------------------
 
+# get recoded data frame with eventual scales
 
+## input data
+bfi.data <- data[grep(x = names(data), pattern = "BFI_", value = TRUE)]
+data <- bfi.data
+
+## this needs to be addded into a function:
+recodes <- na.omit(unlist(purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$recode)))
+bfi.recoded <- recodeQuick(bfi.data, recode=recodes)
+
+## now make skales, total scale scores:
+
+
+items <- purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$items)
+scores <- purrr::map(seq_along(items), ~ rowMeans(bfi.recoded[items[[.]]], na.rm = TRUE)) ## add here the possibility to remove items when neccessary.
+
+# scores of items
+names(scores) <- purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$name)
+
+final.data <- cbind(bfi.recoded, data.frame(scores))
 
 
 
