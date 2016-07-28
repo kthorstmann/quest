@@ -18,7 +18,6 @@
 
 # make scales into a readable list -----------------------------------
 
-
 #' Transform a scale into a readable list
 #'
 #' This function turns a scale in the form of \code{A = 1, 5, 10R, 15r} into a list which of \enumerate{
@@ -93,21 +92,44 @@ scale2list <- function(scale){
   result
 }
 
-# take scales and make recoded data set ------------------------------
+# 2. scales into recoded data set ------------------------------------
 
-# takes a scale and recodes the items and makes a new data set,
-# with the recoded items
 
+
+## example:
 scales <-  c("E = 1r, 6, 11R, 16",
              "A = 2r, 7, 12r, 17r",
              "C = 3, 8r, 13, 18",
              "N = 4, 9r, 14, 19",
              "O = 5, 10, 15, 20 21")
-
 data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
 
-codeScales <- function(data, scales, recode = TRUE, valid.values = NULL){
 
+#' codeScales
+#'
+#' A function to compute the means for each participant in a certain questionnaire. Any questionnaire contains a table that indicates which items belong to which scale and which items are recoded. This table can be inserted into the function via the argument \code{scales}.
+#'
+#' @param data A data frame that contains \emp{only} the values of the questionnaire.
+#' @param scales A character vector that indicates which items belong to which scale
+#' @param recode Logical. Should the values be recoded automatically? Default is to \code{TRUE}
+#' @param valid.values Vector of numeric values that are valid for the questionnaire, i. e. the numeric transformation of the likert scale.
+#' @param return.both Logical. Should the original data frame and the new scales be returned? Defaul is ti \code{FALSE}, which returnes only the scores scales.
+#'
+#' @return
+#' A data frame wich contains the scored scales of the questionnaire used.
+#' @export
+#'
+#' @examples
+#' scales <-  c("E = 1r, 6, 11R, 16",
+#'              "A = 2r, 7, 12r, 17r",
+#'              "C = 3, 8r, 13, 18",
+#'              "N = 4, 9r, 14, 19",
+#'              "O = 5, 10, 15, 20 21")
+#' data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+#' transformed.data <- codeScales(data, scales, recode = TRUE, return.both = FALSE)
+
+codeScales <- function(data, scales, recode = TRUE, valid.values = NULL,
+                       return.both = FALSE){
 
   ### beg of section that is identical ____________________________________
 
@@ -156,40 +178,58 @@ codeScales <- function(data, scales, recode = TRUE, valid.values = NULL){
   }
 
   ## computing the final scores
-
   scored.scales <- purrr::map(all.items, ~ rowMeans(data[.x], na.rm = TRUE))
   names(scored.scales) <- all.names
   scored.scales <- as.data.frame(scored.scales)
 
-  ## make it optional to get measurement models?
-  return(data)
+  if (return.both) {
+    result <- cbind(data, scored.scales)
+  } else {
+    result <- scored.scales
+  }
+  return(result)
 }
 
 
+# 2.1 recode items in data set ---------------------------------------
 
-
-
-# recode items in data set -------------------------------------------
-
-# input is a vector of item positions or names of items to recode
-# get as input not only the position but also the names, so either option.
-
+# eample 1
 data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
 recodeQuick(data, recode = "a", valid.values = c(1:4))
-## throws error becuase there is neither TRUE FALSE, but NA
 
+# example 2
 data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
 data <- data[1:10, 1:10]
 data[1, 6] <- -99
 recode <- c(6, 10)
 recodeQuick(data, recode = c(6, 10), valid.values = c(1:4))
 
+#' recodeQuick to recode questionnaire data
+#'
+#' Questionnaire data usually contain only values ranging from 1 to 4 or 1 to 5. This function takes as input the items of a data frame that should be recoded (as numeric position or as names) and recodes these items. Unless missings are scored as \code{NA} and not, for example, as \code{-99}, the function will just reverse the values of the items.
+#'
+#' @param data A data frame that contains only the values of the data frame.
+#' @param recode A numeric vector giving the poisitions of the items to recode or a character vector giving the names of the variables to recode.
+#' @param valid.values A vector containing the valid values of the questionnaire, i. e. the ones that should be recoded. Can be useful if missings are recoded as \code{-99}.
+#'
+#' @return The data frame with the recoded items.
+#' @export
+#'
+#' @examples
+#' ## eample 1
+#' data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
+#' recodeQuick(data, recode = "a", valid.values = c(1:4))
+#'
+#' ## example 2
+#' data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+#' data <- data[1:10, 1:10]
+#' data[1, 6] <- -99 ## here, a missing is coded as -99.
+#' recode <- c(6, 10)
+#' recodeQuick(data, recode = c(6, 10), valid.values = c(1:4))
+
 recodeQuick <- function(data, recode, valid.values = NULL){
 
   stopifnot(is.data.frame(data))
-
-
-  # check that values are only integers:
   data.check <- as.data.frame(purrr::map(data, as.integer))
 
   if (any(data.check != data, na.rm = TRUE)) {
@@ -228,7 +268,6 @@ recodeQuick <- function(data, recode, valid.values = NULL){
   # make data frame that is checked for recode:
   data.recode <- data[recode.names]
 
-
   # check values in data frame, are all recodes present, some missings?
   if (is.null(valid.values)) {
     table.values <- table(unlist(data.recode))
@@ -252,20 +291,37 @@ recodeQuick <- function(data, recode, valid.values = NULL){
 }
 
 
-# function: make scores from data set --------------------------------
 
-## get measurement models
+# 3. get measurement models from data set ----------------------------
 
-# input: data and keys
-# output: measurement models as text
-
+# example
 scales <-  c("E = 1r, 6, 11R, 16",
              "A = 2r, 7, 12r, 17r",
              "C = 3, 8r, 13, 18",
              "N = 4, 9r, 14, 19",
              "O = 5, 10, 15, 20 21")
 data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
-library(quest)
+mModels(data, scales, run.models = FALSE, std.lv = TRUE)
+
+
+#' Get Measurement Models for the questionnaire used
+#'
+#' @param data The data frame containing only the variables that are used for the analyses
+#' @param scales A character vector of scales used.
+#' @param run.models Logical. Should the models be run or should they be returnes as character output? Default is to \code{FALSE}, which returns only the definition of the measurement models in lavaan syntax.
+#' @param ... If \code{run.models = TRUE}, a measurement model for each scale is fitted, using \code{\link[lavaan]{cfa}}. These \code{...} arguments are passed on directly to this function.
+#'
+#' @return Depending on \code{run.models}, this function returns either a list of character vectors, each containint the measurement model in \code{lavaan} syntax or the fitted model.
+#' @export
+#'
+#' @examples
+#' scales <-  c("E = 1r, 6, 11R, 16",
+#'              "A = 2r, 7, 12r, 17r",
+#'              "C = 3, 8r, 13, 18",
+#'              "N = 4, 9r, 14, 19",
+#'              "O = 5, 10, 15, 20 21")
+#' data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
+#' mModels(data, scales, run.models = FALSE, std.lv = TRUE)
 
 
 mModels <- function(data, scales, run.models, ...){
@@ -325,34 +381,11 @@ mModels <- function(data, scales, run.models, ...){
 
 }
 
-# function: make measurement models ----------------------------------
-
-# get recoded data frame with eventual scales
-
-## input data
-bfi.data <- data[grep(x = names(data), pattern = "BFI_", value = TRUE)]
-data <- bfi.data
-
-## this needs to be addded into a function:
-recodes <- na.omit(unlist(purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$recode)))
-bfi.recoded <- recodeQuick(bfi.data, recode=recodes)
-
-## now make skales, total scale scores:
-
-
-items <- purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$items)
-scores <- purrr::map(seq_along(items), ~ rowMeans(bfi.recoded[items[[.]]], na.rm = TRUE)) ## add here the possibility to remove items when neccessary.
-
-# scores of items
-names(scores) <- purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$name)
-
-final.data <- cbind(bfi.recoded, data.frame(scores))
 
 
 
+# 99 keys of important questionnaires --------------------------------
 
-
-# helper: keys of important questionnaires ---------------------------
 
 #' Short Keys for Questionnaires
 #'
@@ -368,8 +401,6 @@ final.data <- cbind(bfi.recoded, data.frame(scores))
 #' @param keytable The short name of the questionnaire that should be analyzed. See details for all available questionnaires.
 #'
 #' @return Returns a vector with short keys readable by the package \code{quest} for further analyses.
-#'
-#'
 #'
 #' @export
 #'
