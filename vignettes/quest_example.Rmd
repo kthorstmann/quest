@@ -156,11 +156,6 @@ mModels(data = bfi.data, scales = scales, run.models = TRUE)
 
 
 
-
-
-
-
-
 You can also use the function `NOT_YET_WRITTEN` to take your codebook (which you should have) and let this object be generated.
 
 
