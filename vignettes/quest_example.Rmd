@@ -99,7 +99,7 @@ bfik.data <- data[bfik.items]
 After having selected the data frame that contains only the items from the questionnaire in the **correct order**, you can use this data frame together with the shortkeys to proceed in your analysis. 
 
 
-```{r}
+```{r show one itemkey, eval = TRUE, echo = TRUE}
 
 itemkey.1 <- scale2list(scales[1])
 itemkey.1
@@ -108,9 +108,8 @@ itemkey.1
 
 To extract the five scales from the questionnaires, make first a list of all the keys (nested list).
 
-```{r}
+```{r show scale function, eval = TRUE, echo = TRUE, message = FALSE}
 
-library(purrr)
 itemkeys <- purrr::map(scales, scale2list)
 itemkeys[1]
 
@@ -120,35 +119,46 @@ itemkeys[1]
 The itemkeys can then be used to transform the data set to a final data frame with recoded values and scale scores. 
 
 
-```{r}
+```{r code scales, eval = TRUE, echo = TRUE}
 
 # Extract all BFI data:
 bfi.data <- data[grep(x = names(data), pattern = "BFI_", value = TRUE)]
 
-
-## this needs to be addded into a function
-recodes <- na.omit(unlist(purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$recode)))
-bfi.recoded <- recodeQuick(bfi.data, recode=recodes)
-
-## now make skales, total scale scores:
-
-
-items <- purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$items)
-scores <- purrr::map(seq_along(items), ~ rowMeans(bfi.recoded[items[[.]]], na.rm = TRUE)) ## add here the possibility to remove items when neccessary.
-
-# scores of items
-names(scores) <- purrr::map(seq_along(itemkeys), ~ itemkeys[[.]]$name)
-
-final.data <- cbind(bfi.recoded, data.frame(scores))
-
-### this will only be one function. 
-
-## then another function that makes the measurement models for lavaan.
-  ## this will be included in the final function
-## returns the final data frame with factor scores.
+bfi.scales <- codeScales(bfi.data, scales, recode = TRUE, return.both=TRUE)
+head(bfi.scales)
 
 
 ```
+
+
+This data frame can then be used for further analyses. 
+
+
+## Measurement models
+
+Sometimes, the use of measurement models is neccessary. Using the [lavaan](http://lavaan.ugent.be) package can be used. To get the measurement models for your questionnaire, just use:
+
+```{r write mModels, eval = TRUE, echo = TRUE}
+
+# Extract all BFI data:
+bfi.data <- data[grep(x = names(data), pattern = "BFI_", value = TRUE)]
+mModels(data = bfi.data, scales = scales, run.models = FALSE)
+
+```
+
+You can also fit the models directly, using the following code:
+
+```{r run mModels, eval = TRUE, echo = FALSE}
+bfi.data <- data[grep(x = names(data), pattern = "BFI_", value = TRUE)]
+mModels(data = bfi.data, scales = scales, run.models = TRUE)
+
+```
+
+
+
+
+
+
 
 
 You can also use the function `NOT_YET_WRITTEN` to take your codebook (which you should have) and let this object be generated.

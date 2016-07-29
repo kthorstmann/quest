@@ -95,21 +95,11 @@ scale2list <- function(scale){
 # 2. scales into recoded data set ------------------------------------
 
 
-
-## example:
-scales <-  c("E = 1r, 6, 11R, 16",
-             "A = 2r, 7, 12r, 17r",
-             "C = 3, 8r, 13, 18",
-             "N = 4, 9r, 14, 19",
-             "O = 5, 10, 15, 20 21")
-data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
-
-
 #' codeScales
 #'
 #' A function to compute the means for each participant in a certain questionnaire. Any questionnaire contains a table that indicates which items belong to which scale and which items are recoded. This table can be inserted into the function via the argument \code{scales}.
 #'
-#' @param data A data frame that contains \emp{only} the values of the questionnaire.
+#' @param data A data frame that contains \emph{only} the values of the questionnaire.
 #' @param scales A character vector that indicates which items belong to which scale
 #' @param recode Logical. Should the values be recoded automatically? Default is to \code{TRUE}
 #' @param valid.values Vector of numeric values that are valid for the questionnaire, i. e. the numeric transformation of the likert scale.
@@ -192,17 +182,6 @@ codeScales <- function(data, scales, recode = TRUE, valid.values = NULL,
 
 
 # 2.1 recode items in data set ---------------------------------------
-
-# eample 1
-data <- data.frame(a = c(1, 2, -99), b = c(3, 4, NA))
-recodeQuick(data, recode = "a", valid.values = c(1:4))
-
-# example 2
-data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
-data <- data[1:10, 1:10]
-data[1, 6] <- -99
-recode <- c(6, 10)
-recodeQuick(data, recode = c(6, 10), valid.values = c(1:4))
 
 #' recodeQuick to recode questionnaire data
 #'
@@ -294,16 +273,6 @@ recodeQuick <- function(data, recode, valid.values = NULL){
 
 # 3. get measurement models from data set ----------------------------
 
-# example
-scales <-  c("E = 1r, 6, 11R, 16",
-             "A = 2r, 7, 12r, 17r",
-             "C = 3, 8r, 13, 18",
-             "N = 4, 9r, 14, 19",
-             "O = 5, 10, 15, 20 21")
-data <- bigfive[grep(x = names(bigfive), pattern = "BFI_")]
-mModels(data, scales, run.models = FALSE, std.lv = TRUE)
-
-
 #' Get Measurement Models for the questionnaire used
 #'
 #' @param data The data frame containing only the variables that are used for the analyses
@@ -373,7 +342,7 @@ mModels <- function(data, scales, run.models, ...){
   m.models <- purrr::map2(.x = all.names, .y = manifests.string, ~ stringr::str_c(.x, .y, sep = " =~ "))
 
   if (run.models) {
-    model.fits <- purrr::map(m.models, ~ cfa(model = . , data = data, ...))
+    model.fits <- purrr::map(m.models, ~ lavaan::cfa(model = . , data = data, ...))
     return(model.fits)
   } else {
     return(m.models)
@@ -392,7 +361,7 @@ mModels <- function(data, scales, run.models, ...){
 #' Insert the commonly used short name of a questionnaire to generate the
 #'
 #' Currently available questionnaires are:
-#' \itemize {
+#' \itemize{
 #' \item \href{www.google.com}{BFI-K} QUELLE LINK
 #' \item NEO-PI-R
 #' }

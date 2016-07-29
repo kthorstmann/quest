@@ -14,3 +14,6 @@ Suggests: purrr,
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+Imports: lavaan,
+    purrr,
+    stringr

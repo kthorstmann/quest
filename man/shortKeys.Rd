@@ -17,7 +17,7 @@ Insert the commonly used short name of a questionnaire to generate the
 }
 \details{
 Currently available questionnaires are:
-\itemize {
+\itemize{
 \item \href{www.google.com}{BFI-K} QUELLE LINK
 \item NEO-PI-R
 }
